@@ -41,9 +41,9 @@ Config<Data>::Config(const char *name, uint8_t version, const Data &default_conf
   uint8_t name_len = strlen(name);
   for (uint8_t i = 0; i < CONFIG_NAME_LEN; i++)
   {
-    byte sym = name[i];
-    if (i > name_len)
-      sym = 0;
+    byte sym = 0;
+    if (i < name_len)
+      sym = name[i];
     buffer.name[i] = sym;
     if (EEPROM.read(i) != sym)
       already_exists = false;
@@ -53,11 +53,11 @@ Config<Data>::Config(const char *name, uint8_t version, const Data &default_conf
     already_exists = false;
   if (!already_exists) {
     buffer.data = default_config;
-    _updated;
-  } else {
     uint8_t *pbuffer = (uint8_t *) &buffer;
     for (uint8_t i = 0; i < sizeof(buffer); i++)
-      EEPROM.write(i + CONFIG_NAME_LEN + 1, pbuffer[i]);
+      EEPROM.write(i, pbuffer[i]);
+  } else {
+    uint8_t *pbuffer = (uint8_t *) &buffer;
   }
 }
 
@@ -66,7 +66,7 @@ bool Config<Data>::poll()
 {
   if(_updated) {
     uint8_t *pbuffer = (uint8_t *) &buffer;
-    for (uint8_t i = 0; i < sizeof(buffer); i++)
+    for (uint8_t i = 0; i < (sizeof(buffer) - CONFIG_NAME_LEN - 1); i++)
       EEPROM.write(i + CONFIG_NAME_LEN + 1, pbuffer[i]);
     _updated = false;
     return true;
