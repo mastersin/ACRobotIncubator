@@ -5,7 +5,8 @@
 
 using namespace ACRobot;
 
-#define DAY_SECS (60*60*24)
+#define HOUR_SECS (60*60)
+#define DAY_SECS (HOUR_SECS*24)
 
 const uint8_t doorPin = A5;
 const uint8_t eggPin = 10;
@@ -59,7 +60,7 @@ struct Status
 };
 
 Status status[] = {
-  { 0,             37.5, 38.5, 0.0,  0.0,  false, 0,            false, 0,            "Init" },
+  { 0,             37.5, 38.5, 60.0, 70.0, false, 0,            false, 0,            "Init" },
   { DAY_SECS * 4,  38.5, 38.5, 80.0, 85.0, false, 0,            false, 0,            "Stage1" },
   { DAY_SECS * 11, 37.9, 38.3, 60.0, 65.0, true,  DAY_SECS * 4, true,  DAY_SECS * 4, "Stage2" },
   { DAY_SECS * 3,  37.5, 37.5, 80.0, 90.0, false, 0,            true,  DAY_SECS * 4, "Stage3" },
@@ -69,7 +70,7 @@ Status status[] = {
 uint32_t durations[NumberOfStages];
 uint8_t total_days;
 
-enum State {
+enum IntervalList {
   GLOBAL = 0,
   SCREEN = 1,
   SECOND = 2,
@@ -83,6 +84,23 @@ const unsigned long CONFIG_INTERVAL = 10000;
 
 const uint8_t NUMBER_OF_INTERVALS = 4;
 Intervals<NUMBER_OF_INTERVALS> intervals;
+
+enum SecondsList {
+  VENTILATION    = 0,
+  EGG_TURNING    = 1,
+};
+
+unsigned long VENTILATION_INTERVAL = 4 * HOUR_SECS ;
+unsigned long EGG_TURNING_INTERVAL = 4 * HOUR_SECS ;
+
+const uint8_t NUMBER_OF_SECONDS_INTERVALS = 2;
+Intervals<NUMBER_OF_SECONDS_INTERVALS> seconds_intervals;
+
+bool ventilation_on = false;
+bool egg_turning_on = false;
+
+Interval ventilation;
+Interval egg_turning;
 
 DHT dht(dhtPin, DHT11);
 
@@ -106,7 +124,7 @@ void init_constants()
   for (uint8_t i = 0; i < NumberOfStages; i++)
   {
     _duration += status[i].duration;
-    durations[i] = _duration;    
+    durations[i] = _duration;
   }
   total_days = _duration / DAY_SECS;
 }
@@ -115,11 +133,12 @@ void update_stage()
 {
   for (uint8_t i = 0; i < NumberOfStages; i++)
   {
-    if(counter < durations[i]) {
+    if (counter < durations[i]) {
       stage = i;
       break;
     }
   }
+  settings.stage = stage;
 }
 
 void setup()
@@ -155,12 +174,23 @@ void logic()
 {
   if (temp >= status[stage].max_temp) {
     digitalWrite(hotPin, LOW);
-    digitalWrite(fanPin, LOW);
+    digitalWrite(fanPin, LOW); // after 5 seconds
   }
   if (temp < status[stage].min_temp) {
     digitalWrite(hotPin, HIGH);
     digitalWrite(fanPin, HIGH);
   }
+  // humidity by motor
+
+  if (ventilation_on && !ventilation.poll(counter))
+    digitalWrite(vntPin, HIGH);
+  else
+    digitalWrite(vntPin, LOW);
+
+  if (egg_turning_on && egg_turning.poll(counter))
+    digitalWrite(vntPin, HIGH);
+  else
+    digitalWrite(vntPin, LOW);
 }
 
 uint8_t day()
@@ -173,18 +203,25 @@ uint8_t days_left()
   return total_days - day();
 }
 
+void printMeasure(float value, char type)
+{
+  if (value < 10.0)
+    lcd.print(' ');
+  lcd.print(value, 1);
+  lcd.print(type);
+}
+
 void screen()
 {
+  float tmp;
   lcd.clear();
   lcd.print(day());
   lcd.setCursor(2, 0);
   lcd.print('|');
-  lcd.print(status[stage].max_temp, 1);
-  lcd.print('C');
-  lcd.setCursor(9, 0);
+  printMeasure(status[stage].max_temp, 'C');
+  lcd.setCursor(8, 0);
   lcd.print('|');
-  lcd.print(temp, 1);
-  lcd.print('C');
+  printMeasure(temp, 'C');
   lcd.setCursor(14, 0);
   lcd.print('|');
   lcd.print(stage);
@@ -192,24 +229,26 @@ void screen()
   lcd.print(days_left());
   lcd.setCursor(2, 1);
   lcd.print('|');
-  lcd.print(status[stage].max_hum);
-  lcd.print('%');
-  lcd.setCursor(9, 0);
+  printMeasure(status[stage].max_hum, '%');
+  lcd.setCursor(8, 1);
   lcd.print('|');
-  lcd.print(hum);
-  lcd.print('%');
-  lcd.setCursor(14, 0);
+  printMeasure(hum, '%');
+  lcd.setCursor(14, 1);
   lcd.print('|');
 }
 
 void timer()
 {
-  static bool fanState = false;
-  if (fanState)
+  switch (seconds_intervals.poll(counter++))
   {
-    fanState = false;
-  } else {
-    fanState = true;
+    case VENTILATION:
+      ventilation_on = true;
+      ventilation.reset(counter);
+      break;
+    case EGG_TURNING:
+      egg_turning_on = true;
+      egg_turning.reset(counter);
+      break;
   }
 
   float _hum = dht.readHumidity();
@@ -219,6 +258,9 @@ void timer()
     temp = _temp;
   if (!isnan(_hum))
     hum = _hum;
+
+  settings.time_offset = counter;
+  update_stage();
 }
 
 void loop()

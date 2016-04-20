@@ -12,6 +12,8 @@ class Interval: public PollingInterface
     Interval(long ms): _interval(ms), _last(0) {}
     bool poll() { return poll(millis()); }
     bool poll(unsigned long ms);
+    void reset() { reset(millis()); }
+    void reset(unsigned long ms) { _last = ms; }
 
     unsigned long& operator =(unsigned long ms) { return _interval = ms; }
     bool operator !() { return _interval == 0; }
@@ -27,9 +29,8 @@ class Intervals: public PollingInterface
 {
   public:
     Intervals() {}
-    int poll()
+    int poll(unsigned long ms)
     {
-      unsigned long ms = millis();
       for (register int i = 0; i < n; i++)
       {
         if (!_intervals[i])
@@ -38,6 +39,10 @@ class Intervals: public PollingInterface
           return i;
       }
       return -1;
+    }
+    int poll()
+    {
+      return poll(millis());
     }
 
     Interval& operator[] (const int index)
