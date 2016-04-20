@@ -58,6 +58,8 @@ Config<Data>::Config(const char *name, uint8_t version, const Data &default_conf
       EEPROM.write(i, pbuffer[i]);
   } else {
     uint8_t *pbuffer = (uint8_t *) &buffer;
+    for (uint8_t i = CONFIG_NAME_LEN + 1; i < sizeof(buffer); i++)
+      pbuffer[i] = EEPROM.read(i);
   }
 }
 
@@ -66,8 +68,8 @@ bool Config<Data>::poll()
 {
   if(_updated) {
     uint8_t *pbuffer = (uint8_t *) &buffer;
-    for (uint8_t i = 0; i < (sizeof(buffer) - CONFIG_NAME_LEN - 1); i++)
-      EEPROM.write(i + CONFIG_NAME_LEN + 1, pbuffer[i]);
+    for (uint8_t i = CONFIG_NAME_LEN + 1; i < sizeof(buffer); i++)
+      EEPROM.write(i, pbuffer[i]);
     _updated = false;
     return true;
   }
