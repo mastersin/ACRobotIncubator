@@ -3,6 +3,8 @@
 #include "DHT.h"
 #include "Config.h"
 
+#define DEBUG
+
 using namespace ACRobot;
 
 #define HOUR_SECS (60*60)
@@ -90,8 +92,8 @@ enum SecondsList {
   EGG_TURNING    = 1,
 };
 
-unsigned long VENTILATION_INTERVAL = 4 * HOUR_SECS ;
-unsigned long EGG_TURNING_INTERVAL = 4 * HOUR_SECS ;
+unsigned long VENTILATION_INTERVAL = 60 ;
+unsigned long EGG_TURNING_INTERVAL = 30 ;
 
 const uint8_t NUMBER_OF_SECONDS_INTERVALS = 2;
 Intervals<NUMBER_OF_SECONDS_INTERVALS> seconds_intervals;
@@ -99,8 +101,8 @@ Intervals<NUMBER_OF_SECONDS_INTERVALS> seconds_intervals;
 bool ventilation_on = false;
 bool egg_turning_on = false;
 
-Interval ventilation;
-Interval egg_turning;
+Interval ventilation = 5;
+Interval egg_turning = 5;
 
 DHT dht(dhtPin, DHT11);
 
@@ -143,6 +145,10 @@ void update_stage()
 
 void setup()
 {
+#ifdef DEBUG
+  Serial.begin(9600);
+#endif
+
   lcd.print("Load settings");
   settings = config();
 
@@ -150,6 +156,9 @@ void setup()
   intervals[SCREEN] = SCREEN_INTERVAL;
   intervals[SECOND] = SECOND_INTERVAL;
   intervals[CONFIG] = CONFIG_INTERVAL;
+
+  seconds_intervals[VENTILATION] = VENTILATION_INTERVAL;
+  seconds_intervals[EGG_TURNING] = EGG_TURNING_INTERVAL;
 
   counter = settings.time_offset;
   stage = settings.stage;
@@ -167,7 +176,13 @@ void setup()
   pinMode(hotPin, OUTPUT);
   pinMode(eggPin, OUTPUT);
 
+  pinMode(vntPin, OUTPUT);
+
   dht.begin();
+
+#ifdef DEBUG
+  Serial.println("start");
+#endif
 }
 
 void logic()
@@ -182,15 +197,33 @@ void logic()
   }
   // humidity by motor
 
-  if (ventilation_on && !ventilation.poll(counter))
-    digitalWrite(vntPin, HIGH);
-  else
+  if (ventilation_on) {
+    if (ventilation.poll(counter))
+      ventilation_on = false;
+    else {
+#ifdef DEBUG
+      Serial.println("ventilation = HIGH");
+#endif
+      digitalWrite(vntPin, HIGH);
+    }
+  }
+  if (!ventilation_on) {
     digitalWrite(vntPin, LOW);
+  }
 
-  if (egg_turning_on && egg_turning.poll(counter))
-    digitalWrite(vntPin, HIGH);
-  else
-    digitalWrite(vntPin, LOW);
+  if (egg_turning_on) {
+    if (egg_turning.poll(counter))
+      egg_turning_on = false;
+    else {
+#ifdef DEBUG
+      Serial.println("egg_turning = HIGH");
+#endif
+      digitalWrite(eggPin, HIGH);
+    }
+  }
+  if (!egg_turning_on) {
+    digitalWrite(eggPin, LOW);
+  }
 }
 
 uint8_t day()
@@ -239,14 +272,27 @@ void screen()
 
 void timer()
 {
-  switch (seconds_intervals.poll(counter++))
+  counter++;
+
+#ifdef DEBUG
+  Serial.print("counter = ");
+  Serial.println(counter);
+#endif
+
+  switch (seconds_intervals.poll(counter))
   {
     case VENTILATION:
-      ventilation_on = true;
+      ventilation_on = true; // check for status
+#ifdef DEBUG
+      Serial.println("ventilation_on");
+#endif
       ventilation.reset(counter);
       break;
     case EGG_TURNING:
-      egg_turning_on = true;
+      egg_turning_on = true;; // check for status
+#ifdef DEBUG
+      Serial.println("egg_turning_on");
+#endif
       egg_turning.reset(counter);
       break;
   }
