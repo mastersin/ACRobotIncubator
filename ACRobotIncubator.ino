@@ -10,7 +10,14 @@ using namespace ACRobot;
 #define HOUR_SECS (60*60)
 #define DAY_SECS (HOUR_SECS*24)
 
-const uint8_t doorPin = A5;
+const uint8_t rightSideBtnPin = A0;
+const uint8_t rightBtnPin     = A1;
+const uint8_t downBtnPin      = A2;
+const uint8_t upBtnPin        = A3;
+const uint8_t leftBtnPin      = A4;
+const uint8_t leftSideBtnPin  = A5;
+
+const uint8_t lightPin = 13;
 const uint8_t eggPin = 10;
 const uint8_t fanPin = 9;
 const uint8_t hotPin = 8;
@@ -81,6 +88,7 @@ enum IntervalList {
   SCREEN = 1,
   SECOND = 2,
   CONFIG = 3,
+  EGG_TURNING = 4,
 };
 
 const unsigned long GLOBAL_INTERVAL = 50;
@@ -88,32 +96,37 @@ const unsigned long SCREEN_INTERVAL = 500;
 const unsigned long SECOND_INTERVAL = 1000;
 const unsigned long CONFIG_INTERVAL = 10000;
 
-const uint8_t NUMBER_OF_INTERVALS = 4;
+const uint8_t NUMBER_OF_INTERVALS = 5;
 Intervals<NUMBER_OF_INTERVALS> intervals;
 
 enum SecondsList {
-  VENTILATION    = 0,
-  EGG_TURNING    = 1,
+  VENTILATION_STARTING  = 0,
+  EGG_TURN_STARTING     = 1,
 };
-
-unsigned long VENTILATION_INTERVAL = 60 ;
-unsigned long EGG_TURNING_INTERVAL = 30 ;
 
 const uint8_t NUMBER_OF_SECONDS_INTERVALS = 2;
 Intervals<NUMBER_OF_SECONDS_INTERVALS> seconds_intervals;
 
-bool ventilation_on = false;
-bool egg_turning_on = false;
+bool heat_is_on      = false;
+bool fan_continue_on = false;
 
-Interval ventilation = 5;
-Interval egg_turning = 5;
+bool ventilation_on  = false;
+bool egg_turning_on  = false;
+
+Interval fan_continue = 5; // 5 seconds after heating
+Interval ventilation;
+Interval egg_turning;
 
 DHT dht(dhtPin, DHT11);
 
+uint32_t current_millis;
 int poll()
 {
+  current_millis = millis();
+
   config.poll();
-  return intervals.poll();
+
+  return intervals.poll(current_millis);
 }
 
 
@@ -181,8 +194,8 @@ void setup()
   lcd.clear();
   lcd.print("Starting");
 
-  pinMode(doorPin, OUTPUT);
-  digitalWrite(doorPin, HIGH);
+  pinMode(lightPin, OUTPUT);
+  digitalWrite(lightPin, HIGH);
 
   pinMode(fanPin, OUTPUT);
   pinMode(hotPin, OUTPUT);
@@ -192,22 +205,87 @@ void setup()
 
   dht.begin();
 
+  pinMode(upBtnPin,        INPUT_PULLUP);
+  pinMode(downBtnPin,      INPUT_PULLUP);
+  pinMode(rightBtnPin,     INPUT_PULLUP);
+  pinMode(leftBtnPin,      INPUT_PULLUP);
+  pinMode(rightSideBtnPin, INPUT_PULLUP);
+  pinMode(leftSideBtnPin,  INPUT_PULLUP);
+
 #ifdef DEBUG
   Serial.println("start");
 #endif
 }
 
-void logic()
+inline void regulator()
 {
   if (temp >= status[stage].max_temp) {
     digitalWrite(hotPin, LOW);
-    digitalWrite(fanPin, LOW); // after 5 seconds
+    digitalWrite(fanPin, LOW);
+    if (heat_is_on)  // after 5 seconds
+      fan_continue_on = true;
+    heat_is_on = false;
   }
   if (temp < status[stage].min_temp) {
     digitalWrite(hotPin, HIGH);
     digitalWrite(fanPin, HIGH);
+    heat_is_on = true;
   }
+}
+
+void buttons()
+{
+  if (digitalRead(rightSideBtnPin) == LOW)
+    digitalWrite(lightPin, HIGH);
+  else
+    digitalWrite(lightPin, LOW);
+
+//  if (digitalRead(rightBtnPin) == LOW)
+//    digitalWrite(fanPin, HIGH);
+//  else
+//    digitalWrite(fanPin, LOW);
+//
+//  if (digitalRead(downBtnPin) == LOW)
+//    digitalWrite(fanPin, HIGH);
+//  else
+//    digitalWrite(fanPin, LOW);
+//
+//  if (digitalRead(upBtnPin) == LOW)
+//    digitalWrite(fanPin, HIGH);
+//  else
+//    digitalWrite(fanPin, LOW);
+//
+//  if (digitalRead(leftBtnPin) == LOW)
+//    digitalWrite(fanPin, HIGH);
+//  else
+//    digitalWrite(fanPin, LOW);
+//
+//  if (digitalRead(leftSideBtnPin) == LOW)
+//    digitalWrite(fanPin, HIGH);
+//  else
+//    digitalWrite(fanPin, LOW);
+}
+
+void logic()
+{
+  regulator();
+  buttons();
+
   // humidity by motor
+  if (fan_continue_on) {
+    if (fan_continue.poll(counter))
+      fan_continue_on = false;
+    else {
+#ifdef DEBUG
+      Serial.println("post_fan = HIGH");
+#endif
+      digitalWrite(fanPin, HIGH);
+    }
+  }
+  if (!fan_continue_on) {
+    digitalWrite(fanPin, LOW);
+  }
+
 
   if (ventilation_on) {
     if (ventilation.poll(counter))
@@ -224,7 +302,7 @@ void logic()
   }
 
   if (egg_turning_on) {
-    if (egg_turning.poll(counter))
+    if (egg_turning.poll(current_millis))
       egg_turning_on = false;
     else {
 #ifdef DEBUG
@@ -293,15 +371,15 @@ void timer()
 
   switch (seconds_intervals.poll(counter))
   {
-    case VENTILATION:
+    case VENTILATION_STARTING:
       ventilation_on = true; // check for status
 #ifdef DEBUG
       Serial.println("ventilation_on");
 #endif
       ventilation.reset(counter);
       break;
-    case EGG_TURNING:
-      egg_turning_on = true;; // check for status
+    case EGG_TURN_STARTING:
+      egg_turning_on = true; // check for status
 #ifdef DEBUG
       Serial.println("egg_turning_on");
 #endif

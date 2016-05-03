@@ -16,7 +16,8 @@ class Interval: public PollingInterface
     void reset(unsigned long ms) { _last = ms; }
 
     unsigned long& operator =(unsigned long ms) { return _interval = ms; }
-    bool operator !() { return _interval == 0; }
+    operator unsigned long () const { return _interval; }
+    bool operator !() const { return _interval == 0; }
 
   private:
 
