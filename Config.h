@@ -24,7 +24,7 @@ class Config: public PollingInterface
       return buffer.data;
     }
     void operator() (const Data &data) {
-      return buffer.data = data;
+      buffer.data = data;
       _updated = true;
     }
 

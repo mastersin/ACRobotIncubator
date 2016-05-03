@@ -30,7 +30,8 @@ enum Stages
 {
   Init,
   Stage1,
-  Stage2,
+  Stage2_1,
+  Stage2_2,
   Stage3,
   Stage4,
   NumberOfStages
@@ -53,20 +54,23 @@ struct Status
   uint8_t  max_hum;
 
   bool     turn;      // turning
-  uint32_t turn_time;
+  uint32_t turn_interval;
+  uint32_t turn_duration;
 
   bool     vent;      // ventilation
-  uint32_t vent_time;
+  uint32_t vent_interval;
+  uint32_t vent_duration;
 
   const char *desc;
 };
 
 Status status[] = {
-  { 0,             37.5, 38.5, 60.0, 70.0, false, 0,            false, 0,            "Init" },
-  { DAY_SECS * 4,  38.5, 38.5, 80.0, 85.0, false, 0,            false, 0,            "Stage1" },
-  { DAY_SECS * 11, 37.9, 38.3, 60.0, 65.0, true,  DAY_SECS * 4, true,  DAY_SECS * 4, "Stage2" },
-  { DAY_SECS * 3,  37.5, 37.5, 80.0, 90.0, false, 0,            true,  DAY_SECS * 4, "Stage3" },
-  { DAY_SECS * 3,  37.5, 37.5, 80.0, 90.0, false, 0,            true,  DAY_SECS * 4, "Stage4" },
+  { 0,             37.5, 38.5, 60.0, 70.0,  false, 0,             0,    false, 0,             0,   "Init"     },
+  { DAY_SECS * 4,  38.5, 38.5, 80.0, 85.0,  false, 0,             0,    false, 0,             0,   "Stage1"   },
+  { DAY_SECS * 8,  37.9, 38.3, 60.0, 65.0,  true,  HOUR_SECS * 4, 2000, true,  HOUR_SECS * 4, 60,  "Stage2_1" },
+  { DAY_SECS * 3,  37.9, 38.3, 60.0, 65.0,  true,  HOUR_SECS * 4, 2000, false, 0            , 0,   "Stage2_2" },
+  { DAY_SECS * 3,  37.5, 37.5, 80.0, 90.0,  false, 0,             0,    true,  HOUR_SECS * 4, 360, "Stage3"   },
+  { DAY_SECS * 3,  37.5, 37.5, 80.0, 90.0,  false, 0,             0,    true,  HOUR_SECS * 4, 360, "Stage4"   },
 };
 
 uint32_t durations[NumberOfStages];
@@ -131,7 +135,7 @@ void init_constants()
   total_days = _duration / DAY_SECS;
 }
 
-void update_stage()
+void update_settings()
 {
   for (uint8_t i = 0; i < NumberOfStages; i++)
   {
@@ -141,6 +145,17 @@ void update_stage()
     }
   }
   settings.stage = stage;
+  settings.time_offset = counter;
+
+  if (status[stage].turn_interval != seconds_intervals[EGG_TURN_STARTING])
+    seconds_intervals[EGG_TURN_STARTING] = status[stage].turn_interval;
+  if (status[stage].turn_duration != egg_turning)
+    egg_turning = status[stage].turn_duration;
+
+  if (status[stage].vent_interval != seconds_intervals[VENTILATION_STARTING])
+    seconds_intervals[VENTILATION_STARTING] = status[stage].vent_interval;
+  if (status[stage].vent_duration != ventilation)
+    ventilation = status[stage].vent_duration;
 }
 
 void setup()
@@ -156,9 +171,6 @@ void setup()
   intervals[SCREEN] = SCREEN_INTERVAL;
   intervals[SECOND] = SECOND_INTERVAL;
   intervals[CONFIG] = CONFIG_INTERVAL;
-
-  seconds_intervals[VENTILATION] = VENTILATION_INTERVAL;
-  seconds_intervals[EGG_TURNING] = EGG_TURNING_INTERVAL;
 
   counter = settings.time_offset;
   stage = settings.stage;
@@ -306,7 +318,7 @@ void timer()
     hum = _hum;
 
   settings.time_offset = counter;
-  update_stage();
+  update_settings();
 }
 
 void loop()
@@ -323,7 +335,7 @@ void loop()
       timer();
       break;
     case CONFIG:
-      config.poll();
+      config(settings);
       break;
   }
 }
