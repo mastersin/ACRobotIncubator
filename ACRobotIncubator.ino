@@ -2,6 +2,7 @@
 #include "Interval.h"
 #include "DHT.h"
 #include "Config.h"
+#include "Button.h"
 
 #define DEBUG
 
@@ -113,6 +114,8 @@ bool fan_continue_on = false;
 bool ventilation_on  = false;
 bool egg_turning_on  = false;
 
+Button lightBtn(rightSideBtnPin);
+
 Interval fan_continue = 5; // 5 seconds after heating
 Interval ventilation;
 Interval egg_turning;
@@ -124,6 +127,7 @@ int poll()
 {
   current_millis = millis();
 
+  lightBtn.poll();
   config.poll();
 
   return intervals.poll(current_millis);
@@ -210,7 +214,6 @@ void setup()
   pinMode(downBtnPin,      INPUT_PULLUP);
   pinMode(rightBtnPin,     INPUT_PULLUP);
   pinMode(leftBtnPin,      INPUT_PULLUP);
-  pinMode(rightSideBtnPin, INPUT_PULLUP);
   pinMode(leftSideBtnPin,  INPUT_PULLUP);
 
 #ifdef DEBUG
@@ -236,7 +239,7 @@ inline void regulator()
 
 void buttons()
 {
-  if (digitalRead(rightSideBtnPin) == LOW)
+  if (lightBtn.isPressed())
     digitalWrite(lightPin, HIGH);
   else
     digitalWrite(lightPin, LOW);
