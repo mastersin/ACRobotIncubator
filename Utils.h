@@ -32,6 +32,21 @@ class PollingInterface
     void poll() {};
 };
 
+class FlipFlop
+{
+  public:
+    FlipFlop(): _flip_flop(false) {}
+    operator bool()
+    {
+      register bool flip_flop = _flip_flop;
+      _flip_flop = !_flip_flop;
+      return flip_flop;
+    }
+
+  private:
+    bool _flip_flop;
+};
+
 inline void waitForStart(uint8_t pin)
 {
   pinMode(pin, INPUT_PULLUP);

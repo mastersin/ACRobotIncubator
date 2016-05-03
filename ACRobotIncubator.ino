@@ -134,6 +134,7 @@ static uint8_t stage = 0;
 static uint32_t counter = 0;
 static const char *str = "Init";
 
+static FlipFlop dhtFlipFLop;
 static float hum = 0.0;
 static float temp = 0.0;
 
@@ -387,13 +388,15 @@ void timer()
       break;
   }
 
-  float _hum = dht.readHumidity();
-  float _temp = dht.readTemperature();
-
-  if (!isnan(_temp))
-    temp = _temp;
-  if (!isnan(_hum))
-    hum = _hum;
+  if (dhtFlipFLop) {
+    float _hum = dht.readHumidity();
+    if (!isnan(_hum))
+      hum = _hum;
+  } else {
+    float _temp = dht.readTemperature();
+    if (!isnan(_temp))
+      temp = _temp;
+  }
 
   settings.time_offset = counter;
   update_settings();
