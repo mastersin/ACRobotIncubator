@@ -10,7 +10,7 @@ class Button: public PollingInterface
   public:
     enum State { UNKNOWN, RELEASED, PRESSED };
 
-    Button(uint8_t buttonPin): _buttonPin(buttonPin), _state(UNKNOWN), _wasReleased(false), _wasPressed(false), _wasClicked(false)
+    Button(uint8_t buttonPin): _buttonPin(buttonPin), _state(UNKNOWN)
     {
       pinMode(buttonPin, INPUT_PULLUP);
     }
@@ -18,25 +18,39 @@ class Button: public PollingInterface
     bool poll()
     {
       register uint8_t state = digitalRead(_buttonPin);
-      if (state == HIGH) {
-        if (_state == PRESSED)
-          _wasClicked = true;
-        _wasReleased = true;
-        _wasPressed = false;
-        _state = RELEASED;
-      } else {
-        _wasPressed = true;
-        _state = PRESSED;
-      }
-      return _state != RELEASED;
+      _state = state == LOW ? PRESSED : RELEASED;
+      return _state == PRESSED;
     }
-    bool isReleased() {
-      return _state == RELEASED;
+    bool isReleased() const {
+      return _state == RELEASED ;
     }
-    bool isPressed() {
+    bool isPressed() const {
       return _state == PRESSED;
     }
 
+    operator bool() const { return isPressed(); }
+
+  private:
+    uint8_t _buttonPin;
+    State _state;
+};
+
+class PressButton: public Button
+{
+  public:
+    PressButton(uint8_t buttonPin):
+      Button(buttonPin), _wasReleased(false), _wasPressed(false) {}
+
+    bool poll()
+    {
+      if (Button::poll()) {
+        _wasPressed = true;
+        return true;
+      }
+      _wasReleased = true;
+      _wasPressed = false;
+      return false;
+    }
     bool wasPressed() {
       if (_wasPressed && _wasReleased) {
         _wasReleased = false;
@@ -44,7 +58,36 @@ class Button: public PollingInterface
       }
       return false;
     }
-    bool isClicked() {
+    void reset()
+    {
+      _wasReleased = false;
+      _wasPressed = false;
+    }
+
+    operator bool() { return wasPressed(); }
+
+  private:
+    bool _wasReleased;
+    bool _wasPressed;
+};
+
+class ClickButton: public Button
+{
+  public:
+    ClickButton(uint8_t buttonPin):
+      Button(buttonPin), _wasClicked(false) {}
+
+    bool poll()
+    {
+      register bool pressed = isPressed();
+      if (!Button::poll()) {
+        if (pressed)
+          _wasClicked = true;
+        return false;
+      }
+      return true;
+    }
+    bool wasClicked() {
       if (_wasClicked) {
         _wasClicked = false;
         return true;
@@ -54,16 +97,11 @@ class Button: public PollingInterface
     void reset()
     {
       _wasClicked = false;
-      _wasReleased = false;
-      _wasPressed = false;
     }
 
-  private:
+    operator bool() { return wasClicked(); }
 
-    uint8_t _buttonPin;
-    State _state;
-    bool _wasReleased;
-    bool _wasPressed;
+  private:
     bool _wasClicked;
 };
 
