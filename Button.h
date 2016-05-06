@@ -139,6 +139,38 @@ class SwitchButton: public virtual ButtonInterface, protected PressButton
     bool _isOn;
 };
 
+class DigitalSwitch: public ButtonInterface
+{
+  public:
+    DigitalSwitch(ButtonInterface &iface, uint8_t pin, bool inv = false):
+      _btn(iface), _pin(pin), _state(inv), _inv(inv)
+    {
+      pinMode(pin, OUTPUT);
+    }
+
+    bool poll()
+    {
+      _btn.poll();
+      set(_btn);
+    }
+
+    operator bool() { return _state; }
+
+  private:
+    void set(bool state)
+    {
+      if(_inv)
+        state = !state;
+      _state = state;
+      digitalWrite(_pin, state ? HIGH : LOW);
+    }
+
+    ButtonInterface &_btn;
+    uint8_t _pin;
+    bool _state;
+    bool _inv;
+};
+
 } // ACRobot namespace
 
 #endif

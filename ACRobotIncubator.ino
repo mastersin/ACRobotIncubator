@@ -115,6 +115,7 @@ bool ventilation_on  = false;
 bool egg_turning_on  = false;
 
 SwitchButton lightBtn(rightSideBtnPin);
+DigitalSwitch lightSw(lightBtn, lightPin);
 
 Interval fan_continue = 5; // 5 seconds after heating
 Interval ventilation;
@@ -127,7 +128,7 @@ int poll()
 {
   current_millis = millis();
 
-  lightBtn.poll();
+  lightSw.poll();
   config.poll();
 
   return intervals.status(current_millis);
@@ -237,43 +238,9 @@ inline void regulator()
   }
 }
 
-void buttons()
-{
-  if (lightBtn)
-    digitalWrite(lightPin, HIGH);
-  else
-    digitalWrite(lightPin, LOW);
-
-//  if (digitalRead(rightBtnPin) == LOW)
-//    digitalWrite(fanPin, HIGH);
-//  else
-//    digitalWrite(fanPin, LOW);
-//
-//  if (digitalRead(downBtnPin) == LOW)
-//    digitalWrite(fanPin, HIGH);
-//  else
-//    digitalWrite(fanPin, LOW);
-//
-//  if (digitalRead(upBtnPin) == LOW)
-//    digitalWrite(fanPin, HIGH);
-//  else
-//    digitalWrite(fanPin, LOW);
-//
-//  if (digitalRead(leftBtnPin) == LOW)
-//    digitalWrite(fanPin, HIGH);
-//  else
-//    digitalWrite(fanPin, LOW);
-//
-//  if (digitalRead(leftSideBtnPin) == LOW)
-//    digitalWrite(fanPin, HIGH);
-//  else
-//    digitalWrite(fanPin, LOW);
-}
-
 void logic()
 {
   regulator();
-  buttons();
 
   // humidity by motor
   if (fan_continue_on) {
