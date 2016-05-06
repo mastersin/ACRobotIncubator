@@ -10,8 +10,8 @@ class Interval: public PollingInterface
   public:
     Interval(): _interval(0), _last(0) {}
     Interval(long ms): _interval(ms), _last(0) {}
-    bool poll() { return poll(millis()); }
-    bool poll(unsigned long ms);
+    bool poll(bool test = false) { return poll(millis(), test); }
+    bool poll(unsigned long ms, bool test = false);
     void reset() { reset(millis()); }
     void reset(unsigned long ms) { _last = ms; }
 

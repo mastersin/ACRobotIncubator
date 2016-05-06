@@ -2,10 +2,11 @@
 #define _ACROBOT_BUTTON_H
 
 #include "Utils.h"
+#include "Interval.h"
 
 namespace ACRobot {
 
-class Button: public ButtonInterface
+class Button: public virtual ButtonInterface
 {
   public:
     enum State { UNKNOWN, RELEASED, PRESSED };
@@ -37,13 +38,20 @@ class Button: public ButtonInterface
 
 class PressButton: public Button
 {
+  static const unsigned long rattle_interval = 300;
+
   public:
     PressButton(uint8_t buttonPin):
-      Button(buttonPin), _wasReleased(false), _wasPressed(false) {}
+      Button(buttonPin), _interval(rattle_interval), _wasReleased(false), _wasPressed(false) {}
 
-    bool poll()
+    bool poll() { return poll(millis()); }
+    bool poll(unsigned long ms)
     {
+      if(!_interval.poll(ms, true))
+        return _wasReleased;
       if (Button::poll()) {
+        if (!_wasPressed)
+          _interval.reset(ms);
         _wasPressed = true;
         return _wasReleased; // _wasPressed && _wasReleased;
       }
@@ -67,6 +75,7 @@ class PressButton: public Button
     operator bool() { return wasPressed(); }
 
   private:
+    Interval _interval;
     bool _wasReleased;
     bool _wasPressed;
 };
@@ -104,7 +113,7 @@ class ClickButton: public Button
     bool _wasClicked;
 };
 
-class SwitchButton: protected PressButton
+class SwitchButton: public virtual ButtonInterface, protected PressButton
 {
   public:
     SwitchButton(uint8_t buttonPin):

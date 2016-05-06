@@ -2,10 +2,11 @@
 
 namespace ACRobot {
 
-bool Interval::poll(unsigned long ms)
+bool Interval::poll(unsigned long ms, bool test)
 {
   if (ms - _last >= _interval) {
-    _last = ms;
+    if(!test)
+      reset(ms);
     return true;
   }
 
