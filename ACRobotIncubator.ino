@@ -114,7 +114,7 @@ bool fan_continue_on = false;
 bool ventilation_on  = false;
 bool egg_turning_on  = false;
 
-Button lightBtn(rightSideBtnPin);
+SwitchButton lightBtn(rightSideBtnPin);
 
 Interval fan_continue = 5; // 5 seconds after heating
 Interval ventilation;
@@ -239,7 +239,7 @@ inline void regulator()
 
 void buttons()
 {
-  if (lightBtn.isPressed())
+  if (lightBtn)
     digitalWrite(lightPin, HIGH);
   else
     digitalWrite(lightPin, LOW);

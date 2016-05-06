@@ -45,7 +45,7 @@ class PressButton: public Button
     {
       if (Button::poll()) {
         _wasPressed = true;
-        return true;
+        return _wasReleased; // _wasPressed && _wasReleased;
       }
       _wasReleased = true;
       _wasPressed = false;
@@ -83,9 +83,8 @@ class ClickButton: public Button
       if (!Button::poll()) {
         if (pressed)
           _wasClicked = true;
-        return false;
       }
-      return true;
+      return _wasClicked;
     }
     bool wasClicked() {
       if (_wasClicked) {
@@ -103,6 +102,32 @@ class ClickButton: public Button
 
   private:
     bool _wasClicked;
+};
+
+class SwitchButton: protected PressButton
+{
+  public:
+    SwitchButton(uint8_t buttonPin):
+      PressButton(buttonPin), _isOn(false) {}
+
+    bool poll()
+    {
+      return PressButton::poll();
+    }
+    bool isOn() {
+      if (wasPressed())
+        _isOn = !_isOn;
+      return _isOn;
+    }
+    void reset()
+    {
+      _isOn = false;
+    }
+
+    operator bool() { return isOn(); }
+
+  private:
+    bool _isOn;
 };
 
 } // ACRobot namespace
