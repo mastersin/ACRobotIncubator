@@ -29,7 +29,13 @@ uint8_t getDigitalPin(uint8_t pin);
 class PollingInterface
 {
   public:
-    void poll() {};
+    virtual bool poll() {};
+};
+
+class ButtonInterface: public PollingInterface
+{
+  public:
+    virtual operator bool() = 0;
 };
 
 class FlipFlop

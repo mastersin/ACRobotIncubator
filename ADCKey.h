@@ -10,7 +10,10 @@ class ADCKey: public PollingInterface
   public:
     ADCKey(uint8_t keyPin): _keyPin(keyPin) {}
     uint8_t operator() () { return _keyValue; }
-    void poll() { _keyValue = readButtons(); }
+    bool poll() {
+      _keyValue = readButtons();
+      return _keyValue != NoneKey;
+    }
 
   protected:
     uint8_t _keyPin;

@@ -2,10 +2,10 @@
 
 namespace ACRobot {
 
-void DCMotor::poll()
+bool DCMotor::poll()
 {
   if (_power == _new_power)
-    return;
+    return false;
 
   register uint8_t power = _new_power;
 
@@ -18,6 +18,8 @@ void DCMotor::poll()
 
   _power = _new_power;
   analogWrite(_pwmPin, power);
+
+  return true;
 }
 
 } // ACRobot namespace

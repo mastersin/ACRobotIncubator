@@ -5,7 +5,7 @@
 
 namespace ACRobot {
 
-class Button: public PollingInterface
+class Button: public ButtonInterface
 {
   public:
     enum State { UNKNOWN, RELEASED, PRESSED };

@@ -16,7 +16,7 @@ class Sonar: public PollingInterface
     }
 
     int operator() () { return _value; }
-    void poll() { _value = readSensor(); }
+    bool poll() { _value = readSensor(); return false; }
 
   protected:
     uint8_t _trigPin;

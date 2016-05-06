@@ -31,7 +31,7 @@ class DCMotor: public DCMotorInterface
     void setPower(uint8_t power) { _new_power = power; poll(); };
     uint8_t& operator= (uint8_t power) { return _new_power = power; };
 
-    void poll();
+    bool poll();
 
   private:
 

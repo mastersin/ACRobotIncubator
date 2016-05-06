@@ -30,7 +30,7 @@ class Intervals: public PollingInterface
 {
   public:
     Intervals() {}
-    int poll(unsigned long ms)
+    int status(unsigned long ms)
     {
       for (register int i = 0; i < n; i++)
       {
@@ -41,7 +41,7 @@ class Intervals: public PollingInterface
       }
       return -1;
     }
-    int poll()
+    int status()
     {
       return poll(millis());
     }

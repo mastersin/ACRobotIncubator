@@ -130,7 +130,7 @@ int poll()
   lightBtn.poll();
   config.poll();
 
-  return intervals.poll(current_millis);
+  return intervals.status(current_millis);
 }
 
 
@@ -373,7 +373,7 @@ void timer()
   Serial.println(counter);
 #endif
 
-  switch (seconds_intervals.poll(counter))
+  switch (seconds_intervals.status(counter))
   {
     case VENTILATION_STARTING:
       ventilation_on = true; // check for status
