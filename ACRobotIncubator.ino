@@ -114,7 +114,7 @@ bool fan_continue_on = false;
 bool ventilation_on  = false;
 bool egg_turning_on  = false;
 
-SwitchButton lightBtn(rightSideBtnPin);
+RattleSwitchButton lightBtn(rightSideBtnPin);
 DigitalSwitch lightSw(lightBtn, lightPin);
 
 Interval fan_continue = 5; // 5 seconds after heating

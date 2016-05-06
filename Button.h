@@ -38,20 +38,13 @@ class Button: public virtual ButtonInterface
 
 class PressButton: public Button
 {
-  static const unsigned long rattle_interval = 300;
-
   public:
     PressButton(uint8_t buttonPin):
-      Button(buttonPin), _interval(rattle_interval), _wasReleased(false), _wasPressed(false) {}
+      Button(buttonPin), _wasReleased(false), _wasPressed(false) {}
 
-    bool poll() { return poll(millis()); }
-    bool poll(unsigned long ms)
+    bool poll()
     {
-      if(!_interval.poll(ms, true))
-        return _wasReleased;
       if (Button::poll()) {
-        if (!_wasPressed)
-          _interval.reset(ms);
         _wasPressed = true;
         return _wasReleased; // _wasPressed && _wasReleased;
       }
@@ -75,9 +68,37 @@ class PressButton: public Button
     operator bool() { return wasPressed(); }
 
   private:
-    Interval _interval;
     bool _wasReleased;
     bool _wasPressed;
+};
+
+class RattlePressButton: public PressButton
+{
+  static const unsigned long rattle_interval = 300;
+
+  public:
+    RattlePressButton(uint8_t buttonPin):
+      PressButton(buttonPin), _interval(rattle_interval) {}
+
+    bool poll() { return poll(millis()); }
+    bool poll(unsigned long ms)
+    {
+      if(_interval.poll(ms, true))
+        return PressButton::poll();
+      return false;
+    }
+    bool wasPressed() {
+      if (PressButton::wasPressed()) {
+        _interval.reset();
+        return true;
+      }
+      return false;
+    }
+
+    operator bool() { return wasPressed(); }
+
+  private:
+    Interval _interval;
 };
 
 class ClickButton: public Button
@@ -122,6 +143,33 @@ class SwitchButton: public virtual ButtonInterface, protected PressButton
     bool poll()
     {
       return PressButton::poll();
+    }
+    bool isOn() {
+      if (wasPressed())
+        _isOn = !_isOn;
+      return _isOn;
+    }
+    void reset()
+    {
+      _isOn = false;
+    }
+
+    operator bool() { return isOn(); }
+
+  private:
+    bool _isOn;
+};
+
+class RattleSwitchButton: public virtual ButtonInterface, protected RattlePressButton
+{
+  public:
+    RattleSwitchButton(uint8_t buttonPin):
+      RattlePressButton(buttonPin), _isOn(false) {}
+
+    bool poll() { return poll(millis()); }
+    bool poll(unsigned long ms)
+    {
+      return RattlePressButton::poll(ms);
     }
     bool isOn() {
       if (wasPressed())
