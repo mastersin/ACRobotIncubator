@@ -157,6 +157,9 @@ class SwitchButton: public ButtonInterface
 
     operator bool() { return isOn(); }
 
+  protected:
+    bool state() const { return _isOn; }
+
   private:
     T _button;
     bool _isOn;
@@ -167,7 +170,7 @@ class DigitalSwitch: public SwitchButton<T>
 {
   public:
     DigitalSwitch(uint8_t buttonPin, uint8_t pin, bool inv = false):
-      SwitchButton<T>(buttonPin), _pin(pin), _state(false), _inv(inv)
+      SwitchButton<T>(buttonPin), _pin(pin), _inv(inv)
     {
       pinMode(pin, OUTPUT);
     }
@@ -178,22 +181,18 @@ class DigitalSwitch: public SwitchButton<T>
       return set(SwitchButton<T>::isOn());
     }
 
-    operator bool() { return _state; }
+    operator bool() { return SwitchButton<T>::state(); }
 
   private:
     bool set(bool state)
     {
-      if (_state != state) {
-        _state = state;
-        if(_inv)
-          state = !state;
-        digitalWrite(_pin, state ? HIGH : LOW);
-      }
-      return _state;
+      if(_inv)
+        state = !state;
+      digitalWrite(_pin, state ? HIGH : LOW);
+      return state;
     }
 
     uint8_t _pin;
-    bool _state;
     bool _inv;
 };
 
