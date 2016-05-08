@@ -134,18 +134,19 @@ class ClickButton: public Button
     bool _wasClicked;
 };
 
-class SwitchButton: public virtual ButtonInterface, protected PressButton
+template <class T>
+class SwitchButton: public ButtonInterface
 {
   public:
     SwitchButton(uint8_t buttonPin):
-      PressButton(buttonPin), _isOn(false) {}
+      _button(buttonPin), _isOn(false) {}
 
     bool poll()
     {
-      return PressButton::poll();
+      return _button.poll();
     }
     bool isOn() {
-      if (wasPressed())
+      if (_button)
         _isOn = !_isOn;
       return _isOn;
     }
@@ -157,63 +158,40 @@ class SwitchButton: public virtual ButtonInterface, protected PressButton
     operator bool() { return isOn(); }
 
   private:
+    T _button;
     bool _isOn;
 };
 
-class RattleSwitchButton: public virtual ButtonInterface, protected RattlePressButton
+template <class T>
+class DigitalSwitch: public SwitchButton<T>
 {
   public:
-    RattleSwitchButton(uint8_t buttonPin):
-      RattlePressButton(buttonPin), _isOn(false) {}
-
-    bool poll() { return poll(millis()); }
-    bool poll(unsigned long ms)
-    {
-      return RattlePressButton::poll(ms);
-    }
-    bool isOn() {
-      if (wasPressed())
-        _isOn = !_isOn;
-      return _isOn;
-    }
-    void reset()
-    {
-      _isOn = false;
-    }
-
-    operator bool() { return isOn(); }
-
-  private:
-    bool _isOn;
-};
-
-class DigitalSwitch: public ButtonInterface
-{
-  public:
-    DigitalSwitch(ButtonInterface &iface, uint8_t pin, bool inv = false):
-      _btn(iface), _pin(pin), _state(inv), _inv(inv)
+    DigitalSwitch(uint8_t buttonPin, uint8_t pin, bool inv = false):
+      SwitchButton<T>(buttonPin), _pin(pin), _state(false), _inv(inv)
     {
       pinMode(pin, OUTPUT);
     }
 
     bool poll()
     {
-      _btn.poll();
-      set(_btn);
+      SwitchButton<T>::poll();
+      return set(SwitchButton<T>::isOn());
     }
 
     operator bool() { return _state; }
 
   private:
-    void set(bool state)
+    bool set(bool state)
     {
-      if(_inv)
-        state = !state;
-      _state = state;
-      digitalWrite(_pin, state ? HIGH : LOW);
+      if (_state != state) {
+        _state = state;
+        if(_inv)
+          state = !state;
+        digitalWrite(_pin, state ? HIGH : LOW);
+      }
+      return _state;
     }
 
-    ButtonInterface &_btn;
     uint8_t _pin;
     bool _state;
     bool _inv;

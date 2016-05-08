@@ -114,8 +114,7 @@ bool fan_continue_on = false;
 bool ventilation_on  = false;
 bool egg_turning_on  = false;
 
-RattleSwitchButton lightBtn(rightSideBtnPin);
-DigitalSwitch lightSw(lightBtn, lightPin);
+DigitalSwitch<RattlePressButton> lightSw(rightSideBtnPin, lightPin);
 
 Interval fan_continue = 5; // 5 seconds after heating
 Interval ventilation;
@@ -199,9 +198,6 @@ void setup()
 
   lcd.clear();
   lcd.print("Starting");
-
-  pinMode(lightPin, OUTPUT);
-  digitalWrite(lightPin, HIGH);
 
   pinMode(fanPin, OUTPUT);
   pinMode(hotPin, OUTPUT);
