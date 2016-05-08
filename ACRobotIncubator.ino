@@ -114,7 +114,9 @@ bool fan_continue_on = false;
 bool ventilation_on  = false;
 bool egg_turning_on  = false;
 
+SwitchButton<RattlePressButton> modeSw(rightBtnPin);
 DigitalSwitch<RattlePressButton> lightSw(rightSideBtnPin, lightPin);
+DigitalButton<Button> eggBtn(leftSideBtnPin, eggPin);
 
 Interval fan_continue = 5; // 5 seconds after heating
 Interval ventilation;
@@ -127,7 +129,9 @@ int poll()
 {
   current_millis = millis();
 
+  modeSw.poll();
   lightSw.poll();
+  eggBtn.poll();
   config.poll();
 
   return intervals.status(current_millis);
