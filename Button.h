@@ -6,7 +6,7 @@
 
 namespace ACRobot {
 
-class Button: public virtual ButtonInterface
+class Button: public ButtonInterface
 {
   public:
     enum State { UNKNOWN, RELEASED, PRESSED };
