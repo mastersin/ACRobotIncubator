@@ -305,7 +305,46 @@ void printMeasure(float value, char type)
   lcd.print(type);
 }
 
-void screen()
+void printNumber(int value)
+{
+  if (value < 10)
+    lcd.print('0');
+  lcd.print(value);
+}
+
+void printTime(unsigned long seconds)
+{
+  int second = seconds % 60;
+  int minute = (seconds / 60) % 60;
+  int hour = (seconds / (60*60)) % 24;
+  printNumber(hour);
+  lcd.print(':');
+  printNumber(minute);
+  lcd.print(':');
+  printNumber(second);
+}
+
+void showTime()
+{
+  lcd.clear();
+  lcd.print(day());
+  lcd.setCursor(2, 0);
+  lcd.print('|');
+  printTime(counter);
+  lcd.setCursor(14, 0);
+  lcd.print('|');
+  lcd.print(stage);
+  lcd.setCursor(0, 1);
+  lcd.print(days_left());
+  lcd.setCursor(2, 1);
+  lcd.print('|');
+  //printTime(counter);
+  lcd.print(counter);
+  lcd.setCursor(14, 1);
+  lcd.print('|');
+}
+
+void showStatus()
 {
   float tmp;
   lcd.clear();
@@ -329,6 +368,14 @@ void screen()
   printMeasure(hum, '%');
   lcd.setCursor(14, 1);
   lcd.print('|');
+}
+
+void screen()
+{
+  if (modeSw)
+    showTime();
+  else
+    showStatus();
 }
 
 void timer()
