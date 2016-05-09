@@ -281,6 +281,68 @@ bool prev_stage()
   return retval;
 }
 
+bool next_day()
+{
+  bool retval = false;
+  if (counter < (total_secs - DAY_SECS)) {
+    counter += DAY_SECS;
+    retval = true;
+  }
+  return retval;
+}
+
+bool prev_day()
+{
+  bool retval = false;
+  if (counter > DAY_SECS) {
+    counter -= DAY_SECS;
+    retval = true;
+  }
+  return retval;
+}
+
+
+bool next_hour()
+{
+  bool retval = false;
+  if (counter < (total_secs - HOUR_SECS)) {
+    counter += HOUR_SECS;
+    retval = true;
+  }
+  return retval;
+}
+
+bool prev_hour()
+{
+  bool retval = false;
+  if (counter > HOUR_SECS) {
+    counter -= HOUR_SECS;
+    retval = true;
+  }
+  return retval;
+}
+
+
+bool next_minute()
+{
+  bool retval = false;
+  if (counter < (total_secs - 60)) {
+    counter += 60;
+    retval = true;
+  }
+  return retval;
+}
+
+bool prev_minute()
+{
+  bool retval = false;
+  if (counter > 60) {
+    counter -= 60;
+    retval = true;
+  }
+  return retval;
+}
+
 bool upCommand(uint8_t mode)
 {
   bool retval = false;
@@ -289,10 +351,13 @@ bool upCommand(uint8_t mode)
     retval = next_stage();
     break;
   case DAY_MODE:
+    retval = next_day();
     break;
   case HOUR_MODE:
+    retval = next_hour();
     break;
   case MINUTE_MODE:
+    retval = next_minute();
     break;
   }
   return retval;
@@ -306,10 +371,13 @@ bool downCommand(uint8_t mode)
     retval = prev_stage();
     break;
   case DAY_MODE:
+    retval = prev_day();
     break;
   case HOUR_MODE:
+    retval = prev_hour();
     break;
   case MINUTE_MODE:
+    retval = prev_minute();
     break;
   }
   return retval;
