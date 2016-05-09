@@ -9,7 +9,7 @@
 using namespace ACRobot;
 
 #define HOUR_SECS (60*60)
-#define DAY_SECS (HOUR_SECS*24)
+#define DAY_SECS (HOUR_SECS*24UL)
 
 const uint8_t rightSideBtnPin = A0;
 const uint8_t rightBtnPin     = A1;
@@ -82,6 +82,7 @@ Status status[] = {
 };
 
 uint32_t durations[NumberOfStages];
+uint32_t total_secs;
 uint8_t total_days;
 
 enum IntervalList {
@@ -154,6 +155,7 @@ void init_constants()
     _duration += status[i].duration;
     durations[i] = _duration;
   }
+  total_secs = _duration;
   total_days = _duration / DAY_SECS;
 }
 
@@ -317,6 +319,9 @@ void printTime(unsigned long seconds)
   int second = seconds % 60;
   int minute = (seconds / 60) % 60;
   int hour = (seconds / (60*60)) % 24;
+  int day = (seconds / (60UL*60UL*24UL)) % 99;
+  printNumber(day);
+  lcd.print(':');
   printNumber(hour);
   lcd.print(':');
   printNumber(minute);
@@ -338,8 +343,7 @@ void showTime()
   lcd.print(days_left());
   lcd.setCursor(2, 1);
   lcd.print('|');
-  //printTime(counter);
-  lcd.print(counter);
+  printTime(total_secs - counter);
   lcd.setCursor(14, 1);
   lcd.print('|');
 }
