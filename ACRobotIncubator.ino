@@ -118,6 +118,21 @@ bool egg_turning_on  = false;
 SwitchButton<RattlePressButton> modeSw(rightBtnPin);
 DigitalSwitch<RattlePressButton> lightSw(rightSideBtnPin, lightPin);
 DigitalButton<Button> eggBtn(leftSideBtnPin, eggPin);
+RattlePressButton upBtn(upBtnPin);
+RattlePressButton downBtn(downBtnPin);
+
+enum SelectMode
+{
+  NONE_MODE,
+  STAGE_MODE,
+  DAY_MODE,
+  HOUR_MODE,
+  MINUTE_MODE,
+  MAX_SELECT_MODE
+};
+
+SequenceButton<RattlePressButton> selectBtn(leftBtnPin, MAX_SELECT_MODE);
+uint8_t selectMode = NONE_MODE;
 
 Interval fan_continue = 5; // 5 seconds after heating
 Interval ventilation;
@@ -131,6 +146,10 @@ int poll()
   current_millis = millis();
 
   modeSw.poll();
+  upBtn.poll();
+  downBtn.poll();
+  selectBtn.poll();
+
   lightSw.poll();
   eggBtn.poll();
   config.poll();
@@ -240,9 +259,92 @@ inline void regulator()
   }
 }
 
+bool next_stage()
+{
+  bool retval = false;
+  if (stage < (NumberOfStages-1)) {
+    counter = durations[stage];
+    retval = true;
+  }
+  return retval;
+}
+
+bool prev_stage()
+{
+  bool retval = false;
+  if (stage > 0) {
+    counter = 0;
+    retval = true;
+  }
+  if (stage > 1)
+    counter = durations[stage-2];
+  return retval;
+}
+
+bool upCommand(uint8_t mode)
+{
+  bool retval = false;
+  switch (mode) {
+  case STAGE_MODE:
+    retval = next_stage();
+    break;
+  case DAY_MODE:
+    break;
+  case HOUR_MODE:
+    break;
+  case MINUTE_MODE:
+    break;
+  }
+  return retval;
+}
+
+bool downCommand(uint8_t mode)
+{
+  bool retval = false;
+  switch (mode) {
+  case STAGE_MODE:
+    retval = prev_stage();
+    break;
+  case DAY_MODE:
+    break;
+  case HOUR_MODE:
+    break;
+  case MINUTE_MODE:
+    break;
+  }
+  return retval;
+}
+
+void buttons()
+{
+  static bool prevModeSw = false;
+  selectMode = selectBtn.next();
+  if(modeSw) {
+    if (!prevModeSw) {
+      prevModeSw = true;
+      selectBtn.reset();
+      selectMode = NONE_MODE;
+    }
+    if(upBtn) {
+      if(upCommand(selectMode))
+        update_settings();
+    }
+    if(downBtn) {
+      if(downCommand(selectMode))
+        update_settings();
+    }
+  } else {
+    if (prevModeSw) {
+      prevModeSw = false;
+      config(settings);
+    }
+  }
+}
+
 void logic()
 {
   regulator();
+  buttons();
 
   // humidity by motor
   if (fan_continue_on) {
@@ -258,7 +360,6 @@ void logic()
   if (!fan_continue_on) {
     digitalWrite(fanPin, LOW);
   }
-
 
   if (ventilation_on) {
     if (ventilation.poll(counter))
@@ -318,8 +419,8 @@ void printTime(unsigned long seconds)
 {
   int second = seconds % 60;
   int minute = (seconds / 60) % 60;
-  int hour = (seconds / (60*60)) % 24;
-  int day = (seconds / (60UL*60UL*24UL)) % 99;
+  int hour = (seconds / HOUR_SECS) % 24;
+  int day = (seconds / DAY_SECS) % 99;
   printNumber(day);
   lcd.print(':');
   printNumber(hour);
@@ -327,6 +428,26 @@ void printTime(unsigned long seconds)
   printNumber(minute);
   lcd.print(':');
   printNumber(second);
+}
+
+char modeSymbol(uint8_t mode)
+{
+  char symbol = ' ';
+  switch (mode) {
+  case STAGE_MODE:
+    symbol = 'S';
+    break;
+  case DAY_MODE:
+    symbol = 'd';
+    break;
+  case HOUR_MODE:
+    symbol = 'h';
+    break;
+  case MINUTE_MODE:
+    symbol = 'm';
+    break;
+  }
+  return symbol;
 }
 
 void showTime()
@@ -346,6 +467,7 @@ void showTime()
   printTime(total_secs - counter);
   lcd.setCursor(14, 1);
   lcd.print('|');
+  lcd.print(modeSymbol(selectMode));
 }
 
 void showStatus()

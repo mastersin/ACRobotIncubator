@@ -159,10 +159,43 @@ class SwitchButton: public ButtonInterface
 
   protected:
     bool state() const { return _isOn; }
-
   private:
     T _button;
     bool _isOn;
+};
+
+template <class T>
+class SequenceButton: public ButtonInterface
+{
+  public:
+    SequenceButton(uint8_t buttonPin, uint8_t maxCount = 2):
+      _button(buttonPin), _counter(0), _maxCount(maxCount) {}
+
+    bool poll()
+    {
+      return _button.poll();
+    }
+    void reset()
+    {
+      next();
+      _counter = 0;
+    }
+
+    operator bool() { return _counter != 0; }
+
+    uint8_t next()
+    {
+      if(_button)
+        ++_counter;
+      if(_counter >= _maxCount)
+        _counter = 0;
+      return _counter;
+    }
+
+  private:
+    T _button;
+    uint8_t _counter;
+    uint8_t _maxCount;
 };
 
 template <class T>
