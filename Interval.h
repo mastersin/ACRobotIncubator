@@ -43,7 +43,7 @@ class Intervals: public PollingInterface
     }
     int status()
     {
-      return poll(millis());
+      return status(millis());
     }
 
     Interval& operator[] (const int index)
