@@ -247,20 +247,45 @@ class DigitalButton
 
     operator bool() { return _state; }
 
-  private:
+  protected:
     bool set(bool state)
     {
-      _state = state;
-      if(_inv)
-        state = !state;
-      digitalWrite(_pin, state ? HIGH : LOW);
-      return state;
+      if (_state != state) {
+        _state = state;
+        if(_inv)
+          state = !state;
+        digitalWrite(_pin, state ? HIGH : LOW);
+      }
+      return _state;
     }
 
     T _button;
     uint8_t _pin;
     bool _state;
     bool _inv;
+};
+
+template <class T>
+class ControlDigitalButton: public DigitalButton<T>
+{
+  using DigitalButton<T>::_button;
+  using DigitalButton<T>::_state;
+
+  public:
+    ControlDigitalButton(uint8_t buttonPin, uint8_t pin, bool inv = false):
+      DigitalButton<T>(buttonPin, pin, inv), _force(false) {}
+
+    bool poll()
+    {
+      _button.poll();
+      return DigitalButton<T>::set(_button || _force);
+    }
+
+    operator bool() { return _state || _force; }
+    void operator() (bool state) { _force = state; }
+
+  private:
+    bool _force;
 };
 
 } // ACRobot namespace

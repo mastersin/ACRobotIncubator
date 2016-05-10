@@ -96,7 +96,7 @@ enum IntervalList {
 const unsigned long GLOBAL_INTERVAL = 50;
 const unsigned long SCREEN_INTERVAL = 500;
 const unsigned long SECOND_INTERVAL = 1000;
-const unsigned long CONFIG_INTERVAL = 10000;
+const unsigned long CONFIG_INTERVAL = 30000;
 
 const uint8_t NUMBER_OF_INTERVALS = 5;
 Intervals<NUMBER_OF_INTERVALS> intervals;
@@ -117,7 +117,8 @@ bool egg_turning_on  = false;
 
 SwitchButton<RattlePressButton> modeSw(rightBtnPin);
 DigitalSwitch<RattlePressButton> lightSw(rightSideBtnPin, lightPin);
-DigitalButton<Button> eggBtn(leftSideBtnPin, eggPin);
+ControlDigitalButton<Button> eggBtn(leftSideBtnPin, eggPin);
+ControlDigitalButton<Button> vntBtn(leftBtnPin, vntPin);
 RattlePressButton upBtn(upBtnPin);
 RattlePressButton downBtn(downBtnPin);
 
@@ -152,6 +153,7 @@ int poll()
 
   lightSw.poll();
   eggBtn.poll();
+  vntBtn.poll();
   config.poll();
 
   return intervals.status(current_millis);
@@ -436,11 +438,11 @@ void logic()
 #ifdef DEBUG
       Serial.println("ventilation = HIGH");
 #endif
-      digitalWrite(vntPin, HIGH);
+      vntBtn(true);
     }
   }
   if (!ventilation_on) {
-    digitalWrite(vntPin, LOW);
+    vntBtn(false);
   }
 
   if (egg_turning_on) {
@@ -450,11 +452,11 @@ void logic()
 #ifdef DEBUG
       Serial.println("egg_turning = HIGH");
 #endif
-      digitalWrite(eggPin, HIGH);
+      eggBtn(true);
     }
   }
   if (!egg_turning_on) {
-    digitalWrite(eggPin, LOW);
+    eggBtn(false);
   }
 }
 
