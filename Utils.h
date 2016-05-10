@@ -60,15 +60,6 @@ inline void waitForStart(uint8_t pin)
   pinMode(pin, INPUT);
 }
 
-enum {
-  NoneKey = 0,
-  RightKey,
-  LeftKey,
-  UpKey,
-  DownKey,
-  SelectKey
-};
-
 } // ACRobot namespace
 
 #endif
