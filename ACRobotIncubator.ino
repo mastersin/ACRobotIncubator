@@ -75,8 +75,8 @@ struct Status
 Status status[] = {
   { 0,             37.5, 38.5, 60.0, 70.0,  false, 0,             0,    false, 0,             0,   "Init"     },
   { DAY_SECS * 4,  38.5, 38.5, 80.0, 85.0,  false, 0,             0,    false, 0,             0,   "Stage1"   },
-  { DAY_SECS * 8,  37.9, 38.3, 60.0, 65.0,  true,  HOUR_SECS * 4, 2000, true,  HOUR_SECS * 4, 60,  "Stage2_1" },
-  { DAY_SECS * 3,  37.9, 38.3, 60.0, 65.0,  true,  HOUR_SECS * 4, 2000, false, 0            , 0,   "Stage2_2" },
+  { DAY_SECS * 8,  37.9, 38.3, 60.0, 65.0,  true,  HOUR_SECS * 4, 900,  true,  HOUR_SECS * 4, 60,  "Stage2_1" },
+  { DAY_SECS * 3,  37.9, 38.3, 60.0, 65.0,  true,  HOUR_SECS * 4, 900,  false, 0            , 0,   "Stage2_2" },
   { DAY_SECS * 3,  37.5, 37.5, 80.0, 90.0,  false, 0,             0,    true,  HOUR_SECS * 4, 360, "Stage3"   },
   { DAY_SECS * 3,  37.5, 37.5, 80.0, 90.0,  false, 0,             0,    true,  HOUR_SECS * 4, 360, "Stage4"   },
 };
@@ -597,7 +597,7 @@ void timer()
 #ifdef DEBUG
       Serial.println("egg_turning_on");
 #endif
-      egg_turning.reset(counter);
+      egg_turning.reset(current_millis);
       break;
   }
 
