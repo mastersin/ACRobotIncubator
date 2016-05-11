@@ -250,8 +250,10 @@ inline void regulator()
   if (temp >= status[stage].max_temp) {
     digitalWrite(hotPin, LOW);
     digitalWrite(fanPin, LOW);
-    if (heat_is_on)  // after 5 seconds
+    if (heat_is_on) {  // after 5 seconds
       fan_continue_on = true;
+      fan_continue.reset(counter);
+    }
     heat_is_on = false;
   }
   if (temp < status[stage].min_temp) {
@@ -427,7 +429,7 @@ void logic()
       digitalWrite(fanPin, HIGH);
     }
   }
-  if (!fan_continue_on) {
+  if (!heat_is_on && !fan_continue_on) {
     digitalWrite(fanPin, LOW);
   }
 
